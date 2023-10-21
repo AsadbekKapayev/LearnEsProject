@@ -1,0 +1,42 @@
+version: "2.3"
+
+networks:
+  default:
+    name: sandbox-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.36.0.0/16
+
+services:
+
+  es:
+    container_name: sandbox-es
+    image: elasticsearch:7.12.1
+    mem_limit: 3000M
+    restart: always
+    ports:
+      - "12216:9200"                              #  http://localhost:12216
+    environment:
+      - discovery.type=single-node
+      - node.name=from-plugin
+      - bootstrap.memory_lock=true
+      - index.store.type=hybridfs
+      - "ES_JAVA_OPTS=-Xms1500m -Xmx1500m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ~/volumes/sandbox/elasticsearch:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:7.12.1
+    container_name: sandbox-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://sandbox-es:9200
+    ports:
+      - 12219:5601
+    depends_on:
+      - es
